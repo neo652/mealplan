@@ -21,7 +21,7 @@ import type { MealCategory } from '@/lib/types';
 import { MEAL_CATEGORIES } from '@/lib/constants';
 
 export default function SidebarContentComponent() {
-  const { mealItems } = useUser();
+  const { mealItems, user } = useUser();
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const [newItems, setNewItems] = useState({
@@ -33,7 +33,7 @@ export default function SidebarContentComponent() {
 
   const handleAddItem = (category: MealCategory) => {
     const newItem = newItems[category].trim();
-    if (!newItem || !mealItems) return;
+    if (!newItem || !mealItems || !user) return;
 
     const currentItems = mealItems[category] || [];
     if (currentItems.includes(newItem)) {
@@ -42,7 +42,7 @@ export default function SidebarContentComponent() {
     }
 
     startTransition(async () => {
-      const result = await updateMealItem(category, [...currentItems, newItem]);
+      const result = await updateMealItem(user.uid, category, [...currentItems, newItem]);
       if (result?.error) {
         toast({ title: 'Error adding item', description: result.error, variant: 'destructive' });
       } else {
@@ -52,10 +52,10 @@ export default function SidebarContentComponent() {
   };
   
   const handleRemoveItem = (category: MealCategory, itemToRemove: string) => {
-    if (!mealItems) return;
+    if (!mealItems || !user) return;
     const updatedItems = (mealItems[category] || []).filter(item => item !== itemToRemove);
     startTransition(async () => {
-      const result = await updateMealItem(category, updatedItems);
+      const result = await updateMealItem(user.uid, category, updatedItems);
       if (result?.error) {
         toast({ title: 'Error removing item', description: result.error, variant: 'destructive' });
       }

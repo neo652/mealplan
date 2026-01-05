@@ -23,7 +23,7 @@ type MealItemProps = {
 };
 
 export default function MealItem({ day, category, mealName }: MealItemProps) {
-  const { mealItems } = useUser();
+  const { mealItems, user } = useUser();
   const [isRefreshing, startRefreshTransition] = useTransition();
   const [isChanging, startChangeTransition] = useTransition();
   const { toast } = useToast();
@@ -32,8 +32,9 @@ export default function MealItem({ day, category, mealName }: MealItemProps) {
   const availableMeals = mealItems ? mealItems[category] : [];
 
   const handleRefresh = () => {
+    if (!user) return;
     startRefreshTransition(async () => {
-      const result = await suggestAlternativeMeal(day, category, mealName);
+      const result = await suggestAlternativeMeal(user.uid, day, category, mealName);
       if (result?.error) {
         toast({
           title: `Could not refresh ${category}`,
@@ -45,9 +46,9 @@ export default function MealItem({ day, category, mealName }: MealItemProps) {
   };
 
   const handleChange = (newMeal: string) => {
-    if (newMeal === mealName) return;
+    if (newMeal === mealName || !user) return;
     startChangeTransition(async () => {
-      const result = await manuallyUpdateMeal(day, category, newMeal);
+      const result = await manuallyUpdateMeal(user.uid, day, category, newMeal);
       if (result?.error) {
         toast({
           title: `Could not change ${category}`,

@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { saveInitialMealItemsAndGeneratePlan } from '@/app/actions';
 import { useTransition } from 'react';
-import { useToast } from '@/lib/hooks';
+import { useToast, useUser } from '@/lib/hooks';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UtensilsCrossed } from 'lucide-react';
 import LoadingSpinner from './loading-spinner';
@@ -34,6 +34,7 @@ const formSchema = z.object({
 export default function InitialSetupForm() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const { user } = useUser();
   const formImage = PlaceHolderImages.find(p => p.id === 'initial-setup-hero');
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -47,6 +48,10 @@ export default function InitialSetupForm() {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!user) {
+        toast({ title: 'Error', description: 'You must be logged in to save your meal plan.', variant: 'destructive' });
+        return;
+    }
     startTransition(async () => {
       const mealItems = {
         breakfast: values.breakfast.split('\n').filter(item => item.trim() !== ''),
@@ -55,7 +60,7 @@ export default function InitialSetupForm() {
         snack: values.snack.split('\n').filter(item => item.trim() !== ''),
       };
 
-      const result = await saveInitialMealItemsAndGeneratePlan(mealItems);
+      const result = await saveInitialMealItemsAndGeneratePlan(user.uid, mealItems);
 
       if (result?.error) {
         toast({

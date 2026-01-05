@@ -17,7 +17,7 @@ export default function AppHeader() {
   const handleGenerateNewPlan = () => {
     if (!user) return;
     startTransition(async () => {
-      const result = await generateNewPlan();
+      const result = await generateNewPlan(user.uid);
       if (result.error) {
         toast({
           title: 'Error',

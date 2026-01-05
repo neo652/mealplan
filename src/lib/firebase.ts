@@ -15,4 +15,7 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-export { app, auth, db };
+// It's recommended to initialize auth and firestore within a provider or context
+// if you're using them across multiple client components.
+// For server actions, you would initialize them within the action itself.
+export { app, auth, db, firebaseConfig };

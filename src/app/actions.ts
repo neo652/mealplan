@@ -1,29 +1,25 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { auth, db } from '@/lib/firebase';
-import { doc, setDoc, updateDoc, writeBatch, collection } from 'firebase/firestore';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore, doc, setDoc, updateDoc, writeBatch, getDoc, collection, getDocs } from 'firebase/firestore';
 import { suggestNewMealPlan } from '@/ai/flows/generate-meal-plan';
 import { updateSingleMeal } from '@/ai/flows/suggest-alternative-meal';
-import type { MealCategory, MealItems, RawMealItems } from '@/lib/types';
-import { MEAL_CATEGORIES } from '@/lib/constants';
+import type { MealCategory, RawMealItems } from '@/lib/types';
+import { firebaseConfig } from '@/lib/firebase';
 import { addDays, formatISO } from 'date-fns';
 
-async function getUserId() {
-  // In a server action, auth().currentUser is not available.
-  // We rely on the client to provide the UID, or we'd need a different auth pattern.
-  // For this app, we'll assume anonymous auth is handled and we can get a user session.
-  // The official way to get user in server actions is still evolving.
-  // For this project, we'll use this workaround of getting current session.
-  const user = auth.currentUser;
-  if (!user) throw new Error('User not authenticated');
-  return user.uid;
-}
+// Initialize Firebase for server-side operations
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const db = getFirestore(app);
 
 
-export async function saveInitialMealItemsAndGeneratePlan(mealItems: RawMealItems) {
+// Server actions in Next.js do not have access to the client-side auth context.
+// We need to pass the user ID from the client to the server action.
+
+export async function saveInitialMealItemsAndGeneratePlan(uid: string, mealItems: RawMealItems) {
   try {
-    const uid = await getUserId();
     const mealItemsRef = doc(db, 'users', uid, 'data', 'meal-items');
     
     // Generate plan first
@@ -55,11 +51,10 @@ export async function saveInitialMealItemsAndGeneratePlan(mealItems: RawMealItem
   }
 }
 
-export async function generateNewPlan() {
+export async function generateNewPlan(uid: string) {
   try {
-    const uid = await getUserId();
     const mealItemsRef = doc(db, 'users', uid, 'data', 'meal-items');
-    const mealItemsSnap = await mealItemsRef.get();
+    const mealItemsSnap = await getDoc(mealItemsRef);
 
     if (!mealItemsSnap.exists()) {
       throw new Error('Meal items not found. Please set up your meals first.');
@@ -96,9 +91,8 @@ export async function generateNewPlan() {
   }
 }
 
-export async function updateMealItem(category: MealCategory, items: string[]) {
+export async function updateMealItem(uid: string, category: MealCategory, items: string[]) {
     try {
-        const uid = await getUserId();
         const mealItemsRef = doc(db, 'users', uid, 'data', 'meal-items');
         await updateDoc(mealItemsRef, { [category]: items });
 
@@ -109,11 +103,10 @@ export async function updateMealItem(category: MealCategory, items: string[]) {
     }
 }
 
-export async function suggestAlternativeMeal(day: number, mealType: MealCategory, currentMeal: string) {
+export async function suggestAlternativeMeal(uid: string, day: number, mealType: MealCategory, currentMeal: string) {
     try {
-        const uid = await getUserId();
         const mealItemsRef = doc(db, 'users', uid, 'data', 'meal-items');
-        const mealItemsSnap = await mealItemsRef.get();
+        const mealItemsSnap = await getDoc(mealItemsRef);
 
         if (!mealItemsSnap.exists()) throw new Error('Meal items not found.');
         
@@ -137,9 +130,8 @@ export async function suggestAlternativeMeal(day: number, mealType: MealCategory
 }
 
 
-export async function manuallyUpdateMeal(day: number, mealType: MealCategory, newMeal: string) {
+export async function manuallyUpdateMeal(uid: string, day: number, mealType: MealCategory, newMeal: string) {
     try {
-        const uid = await getUserId();
         const dayRef = doc(db, `users/${uid}/daily-meals/day-${day}`);
         await updateDoc(dayRef, { [mealType]: newMeal });
         
