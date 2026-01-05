@@ -1,0 +1,166 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user within the MealGenius application. User authentication is anonymous using Firebase.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "MealItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MealItem",
+      "type": "object",
+      "description": "Represents a single meal item, such as a breakfast, lunch, dinner, or snack option.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MealItem entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N MealItem)"
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the meal item (e.g., Breakfast, Lunch, Dinner, Snack)."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the meal item (e.g., Oatmeal, Salad, Chicken Stir-fry)."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the meal item, including key ingredients or preparation details."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "category",
+        "name"
+      ]
+    },
+    "DailyMealPlan": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DailyMealPlan",
+      "type": "object",
+      "description": "Represents a meal plan for a single day, including breakfast, lunch, dinner, and snack.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the DailyMealPlan entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N DailyMealPlan)"
+        },
+        "date": {
+          "type": "string",
+          "description": "The date for which the meal plan is created. (YYYY-MM-DD)",
+          "format": "date"
+        },
+        "breakfastId": {
+          "type": "string",
+          "description": "Reference to MealItem for breakfast. (Relationship: MealItem 1:1 DailyMealPlan)"
+        },
+        "lunchId": {
+          "type": "string",
+          "description": "Reference to MealItem for lunch. (Relationship: MealItem 1:1 DailyMealPlan)"
+        },
+        "dinnerId": {
+          "type": "string",
+          "description": "Reference to MealItem for dinner. (Relationship: MealItem 1:1 DailyMealPlan)"
+        },
+        "snackId": {
+          "type": "string",
+          "description": "Reference to MealItem for snack. (Relationship: MealItem 1:1 DailyMealPlan)"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "date",
+        "breakfastId",
+        "lunchId",
+        "dinnerId",
+        "snackId"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information. Root document for all user-related data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/meal_items/{mealItemId}",
+        "definition": {
+          "entityName": "MealItem",
+          "schema": {
+            "$ref": "#/backend/entities/MealItem"
+          },
+          "description": "Stores individual meal items for a user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "mealItemId",
+              "description": "The unique identifier for the meal item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/daily_meal_plans/{dailyMealPlanId}",
+        "definition": {
+          "entityName": "DailyMealPlan",
+          "schema": {
+            "$ref": "#/backend/entities/DailyMealPlan"
+          },
+          "description": "Stores daily meal plans for a user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "dailyMealPlanId",
+              "description": "The unique identifier for the daily meal plan."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to store meal planning data for users who are anonymously authenticated. User data is organized under the `/users/{userId}` path, ensuring data isolation and path-based ownership, which simplifies security rules. Each user has their meal items stored in a subcollection `/users/{userId}/meal_items/{mealItemId}` and daily meal plans stored in `/users/{userId}/daily_meal_plans/{dailyMealPlanId}`. This hierarchical structure facilitates easy querying and management of user-specific data.\n\nThis structure achieves Authorization Independence by relying on path-based ownership: access control is based on the `userId` in the path, eliminating the need for `get()` calls to parent documents. Security rules can simply check if `request.auth.uid == userId`. The structure supports the QAPs (Rules are Not Filters) principle because list operations are scoped to the user ID.  Listing meal items or daily meal plans only requires checking that the authenticated user ID matches the user ID in the path, preventing unauthorized access to other users' data. All data within a given collection shares the same security requirements based on ownership."
+  }
+}
