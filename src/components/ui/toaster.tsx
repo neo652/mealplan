@@ -1,6 +1,6 @@
 "use client"
 
-import { useToast } from "@/lib/hooks"
+import { useToast } from "@/firebase"
 import {
   Toast,
   ToastClose,

@@ -1,17 +1,16 @@
 'use client';
 
-import type { DailyMeal } from '@/lib/types';
+import type { DailyMeal, MealItems } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DayCard from './day-card';
-import { useUser } from '@/lib/hooks';
 import { differenceInCalendarDays, startOfDay } from 'date-fns';
 
 type MealPlanDisplayProps = {
   meals: DailyMeal[];
+  mealItems: MealItems | null;
 };
 
-export default function MealPlanDisplay({ meals }: MealPlanDisplayProps) {
-  const { mealItems } = useUser();
+export default function MealPlanDisplay({ meals, mealItems }: MealPlanDisplayProps) {
 
   const planStartDate = mealItems?.planStartDate ? new Date(mealItems.planStartDate) : new Date();
   const today = startOfDay(new Date());

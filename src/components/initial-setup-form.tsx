@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { saveInitialMealItemsAndGeneratePlan } from '@/app/actions';
 import { useTransition } from 'react';
-import { useToast, useUser } from '@/lib/hooks';
+import { useUser, useToast } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UtensilsCrossed } from 'lucide-react';
 import LoadingSpinner from './loading-spinner';

@@ -2,12 +2,11 @@
 
 import { revalidatePath } from 'next/cache';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, setDoc, updateDoc, writeBatch, getDoc, collection, getDocs } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, updateDoc, writeBatch, getDoc } from 'firebase/firestore';
 import { suggestNewMealPlan } from '@/ai/flows/generate-meal-plan';
 import { updateSingleMeal } from '@/ai/flows/suggest-alternative-meal';
 import type { MealCategory, RawMealItems } from '@/lib/types';
-import { firebaseConfig } from '@/lib/firebase';
+import { firebaseConfig } from '@/firebase/config';
 import { addDays, formatISO } from 'date-fns';
 
 // Initialize Firebase for server-side operations
@@ -20,7 +19,6 @@ const db = getFirestore(app);
 
 export async function saveInitialMealItemsAndGeneratePlan(uid: string, mealItems: RawMealItems) {
   try {
-    const mealItemsRef = doc(db, 'users', uid, 'data', 'meal-items');
     
     // Generate plan first
     const plan = await suggestNewMealPlan({
@@ -33,6 +31,8 @@ export async function saveInitialMealItemsAndGeneratePlan(uid: string, mealItems
     // Save meal items and plan in a batch
     const batch = writeBatch(db);
     const planStartDate = new Date();
+    
+    const mealItemsRef = doc(db, 'users', uid, 'data', 'meal-items');
     batch.set(mealItemsRef, { ...mealItems, planStartDate });
 
     plan.forEach((dailyMeal, index) => {

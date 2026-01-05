@@ -10,18 +10,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, Trash2 } from 'lucide-react';
-import { useUser } from '@/lib/hooks';
+import { useUser, useToast } from '@/firebase';
 import { MealIcons } from '@/components/icons';
 import { FormEvent, useState, useTransition } from 'react';
 import { updateMealItem } from '@/app/actions';
-import { useToast } from '@/lib/hooks';
 import LoadingSpinner from './loading-spinner';
-import { SidebarHeader, SidebarContent, SidebarFooter, SidebarGroup } from './ui/sidebar';
-import type { MealCategory } from '@/lib/types';
+import { SidebarHeader, SidebarContent, SidebarFooter } from './ui/sidebar';
+import type { MealCategory, MealItems } from '@/lib/types';
 import { MEAL_CATEGORIES } from '@/lib/constants';
 
-export default function SidebarContentComponent() {
-  const { mealItems, user } = useUser();
+interface SidebarContentComponentProps {
+  mealItems: MealItems | null;
+}
+
+export default function SidebarContentComponent({ mealItems }: SidebarContentComponentProps) {
+  const { user } = useUser();
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const [newItems, setNewItems] = useState({

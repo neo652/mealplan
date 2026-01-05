@@ -5,8 +5,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { UtensilsCrossed } from 'lucide-react';
 import { useTransition } from 'react';
 import { generateNewPlan } from '@/app/actions';
-import { useUser } from '@/lib/hooks';
-import { useToast } from '@/lib/hooks';
+import { useUser, useToast } from '@/firebase';
 import LoadingSpinner from './loading-spinner';
 
 export default function AppHeader() {
