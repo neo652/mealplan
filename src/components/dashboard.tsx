@@ -13,7 +13,7 @@ import LoadingSpinner from './loading-spinner';
 import { DailyMeal, MealItems } from '@/lib/types';
 
 interface DashboardProps {
-  mealItems: MealItems | null;
+  mealItems: MealItems;
   dailyMeals: DailyMeal[] | null;
 }
 
