@@ -4,9 +4,8 @@ import type { MealCategory, MealItems } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, ChevronDown } from 'lucide-react';
 import { MealIcons } from '@/components/icons';
-import { useUser, useToast } from '@/firebase';
+import { useUser, useToast, useFirestore } from '@/firebase';
 import { useTransition } from 'react';
-import { suggestAlternativeMeal, manuallyUpdateMeal } from '@/app/actions';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +13,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import LoadingSpinner from './loading-spinner';
+import { updateSingleMeal } from '@/ai/flows/suggest-alternative-meal';
+import { doc, updateDoc } from 'firebase/firestore';
 
 type MealItemProps = {
   day: number;
@@ -27,6 +28,7 @@ export default function MealItem({ day, category, mealName, mealItems }: MealIte
   const [isRefreshing, startRefreshTransition] = useTransition();
   const [isChanging, startChangeTransition] = useTransition();
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const Icon = MealIcons[category];
   const availableMeals = mealItems ? mealItems[category] : [];
@@ -34,11 +36,20 @@ export default function MealItem({ day, category, mealName, mealItems }: MealIte
   const handleRefresh = () => {
     if (!user) return;
     startRefreshTransition(async () => {
-      const result = await suggestAlternativeMeal(user.uid, day, category, mealName);
-      if (result?.error) {
+      try {
+        const result = await updateSingleMeal({
+            mealType: category,
+            availableMeals,
+            currentMeal: mealName,
+        });
+
+        const dayRef = doc(firestore, `users/${user.uid}/daily-meals/day-${day}`);
+        await updateDoc(dayRef, { [category]: result.suggestedMeal });
+        
+      } catch (error: any) {
         toast({
           title: `Could not refresh ${category}`,
-          description: result.error,
+          description: error.message,
           variant: 'destructive',
         });
       }
@@ -48,11 +59,13 @@ export default function MealItem({ day, category, mealName, mealItems }: MealIte
   const handleChange = (newMeal: string) => {
     if (newMeal === mealName || !user) return;
     startChangeTransition(async () => {
-      const result = await manuallyUpdateMeal(user.uid, day, category, newMeal);
-      if (result?.error) {
+      try {
+        const dayRef = doc(firestore, `users/${user.uid}/daily-meals/day-${day}`);
+        await updateDoc(dayRef, { [category]: newMeal });
+      } catch (error: any) {
         toast({
           title: `Could not change ${category}`,
-          description: result.error,
+          description: error.message,
           variant: 'destructive',
         });
       }

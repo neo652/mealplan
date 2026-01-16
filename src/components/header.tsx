@@ -4,29 +4,55 @@ import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { UtensilsCrossed } from 'lucide-react';
 import { useTransition } from 'react';
-import { generateNewPlan } from '@/app/actions';
-import { useUser, useToast } from '@/firebase';
+import { useUser, useToast, useFirestore } from '@/firebase';
 import LoadingSpinner from './loading-spinner';
+import { MealItems } from '@/lib/types';
+import { suggestNewMealPlan } from '@/ai/flows/generate-meal-plan';
+import { writeBatch, doc } from 'firebase/firestore';
+import { addDays, formatISO } from 'date-fns';
 
-export default function AppHeader() {
+
+export default function AppHeader({ mealItems }: { mealItems: MealItems | null }) {
   const [isPending, startTransition] = useTransition();
   const { user } = useUser();
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const handleGenerateNewPlan = () => {
-    if (!user) return;
+    if (!user || !mealItems) return;
     startTransition(async () => {
-      const result = await generateNewPlan(user.uid);
-      if (result.error) {
-        toast({
-          title: 'Error',
-          description: result.error,
-          variant: 'destructive',
+      try {
+        const plan = await suggestNewMealPlan({
+          breakfastItems: mealItems.breakfast,
+          lunchItems: mealItems.lunch,
+          dinnerItems: mealItems.dinner,
+          snackItems: mealItems.snack,
         });
-      } else {
+
+        const batch = writeBatch(firestore);
+        const planStartDate = new Date();
+        
+        const mealItemsRef = doc(firestore, 'users', user.uid, 'data', 'meal-items');
+        batch.update(mealItemsRef, { planStartDate: formatISO(planStartDate) });
+
+        plan.forEach((dailyMeal, index) => {
+          const dayRef = doc(firestore, `users/${user.uid}/daily-meals/day-${index + 1}`);
+          const mealDate = addDays(planStartDate, index);
+          batch.set(dayRef, { ...dailyMeal, date: formatISO(mealDate) });
+        });
+
+        await batch.commit();
+
          toast({
           title: 'Success!',
           description: 'A new 14-day meal plan has been generated.',
+        });
+        
+      } catch (error: any) {
+        toast({
+          title: 'Error',
+          description: error.message || 'An unknown error occurred.',
+          variant: 'destructive',
         });
       }
     });
@@ -41,7 +67,7 @@ export default function AppHeader() {
             <h1 className="text-xl font-bold font-headline">MealGenius</h1>
         </div>
       </div>
-      <Button onClick={handleGenerateNewPlan} disabled={isPending}>
+      <Button onClick={handleGenerateNewPlan} disabled={isPending || !mealItems}>
         {isPending ? <LoadingSpinner /> : 'Generate New Plan'}
       </Button>
     </header>

@@ -13,9 +13,8 @@ import {
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { saveInitialMealItemsAndGeneratePlan } from '@/app/actions';
 import { useTransition } from 'react';
-import { useUser, useToast } from '@/firebase';
+import { useUser, useToast, useFirestore } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UtensilsCrossed } from 'lucide-react';
 import LoadingSpinner from './loading-spinner';
@@ -23,6 +22,9 @@ import { MEAL_CATEGORIES } from '@/lib/constants';
 import type { MealCategory } from '@/lib/types';
 import Image from 'next/image';
 import {PlaceHolderImages} from '@/lib/placeholder-images';
+import { suggestNewMealPlan } from '@/ai/flows/generate-meal-plan';
+import { writeBatch, doc } from 'firebase/firestore';
+import { addDays, formatISO } from 'date-fns';
 
 const formSchema = z.object({
   breakfast: z.string().min(1, 'Please enter at least one breakfast item.'),
@@ -35,6 +37,7 @@ export default function InitialSetupForm() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const { user } = useUser();
+  const firestore = useFirestore();
   const formImage = PlaceHolderImages.find(p => p.id === 'initial-setup-hero');
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -60,12 +63,31 @@ export default function InitialSetupForm() {
         snack: values.snack.split('\n').filter(item => item.trim() !== ''),
       };
 
-      const result = await saveInitialMealItemsAndGeneratePlan(user.uid, mealItems);
+      try {
+        const plan = await suggestNewMealPlan({
+          breakfastItems: mealItems.breakfast,
+          lunchItems: mealItems.lunch,
+          dinnerItems: mealItems.dinner,
+          snackItems: mealItems.snack,
+        });
 
-      if (result?.error) {
+        const batch = writeBatch(firestore);
+        const planStartDate = new Date();
+        
+        const mealItemsRef = doc(firestore, 'users', user.uid, 'data', 'meal-items');
+        batch.set(mealItemsRef, { ...mealItems, planStartDate: formatISO(planStartDate) });
+
+        plan.forEach((dailyMeal, index) => {
+          const dayRef = doc(firestore, `users/${user.uid}/daily-meals/day-${index + 1}`);
+          const mealDate = addDays(planStartDate, index);
+          batch.set(dayRef, { ...dailyMeal, date: formatISO(mealDate) });
+        });
+
+        await batch.commit();
+      } catch (error: any) {
         toast({
           title: 'Error',
-          description: result.error,
+          description: error.message || 'An unknown error occurred.',
           variant: 'destructive',
         });
       }

@@ -10,14 +10,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, Trash2 } from 'lucide-react';
-import { useUser, useToast } from '@/firebase';
+import { useUser, useToast, useFirestore } from '@/firebase';
 import { MealIcons } from '@/components/icons';
 import { FormEvent, useState, useTransition } from 'react';
-import { updateMealItem } from '@/app/actions';
 import LoadingSpinner from './loading-spinner';
 import { SidebarHeader, SidebarContent, SidebarFooter } from './ui/sidebar';
 import type { MealCategory, MealItems } from '@/lib/types';
 import { MEAL_CATEGORIES } from '@/lib/constants';
+import { doc, updateDoc } from 'firebase/firestore';
 
 interface SidebarContentComponentProps {
   mealItems: MealItems | null;
@@ -27,6 +27,7 @@ export default function SidebarContentComponent({ mealItems }: SidebarContentCom
   const { user } = useUser();
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const firestore = useFirestore();
   const [newItems, setNewItems] = useState({
     breakfast: '',
     lunch: '',
@@ -45,11 +46,12 @@ export default function SidebarContentComponent({ mealItems }: SidebarContentCom
     }
 
     startTransition(async () => {
-      const result = await updateMealItem(user.uid, category, [...currentItems, newItem]);
-      if (result?.error) {
-        toast({ title: 'Error adding item', description: result.error, variant: 'destructive' });
-      } else {
+      try {
+        const mealItemsRef = doc(firestore, 'users', user.uid, 'data', 'meal-items');
+        await updateDoc(mealItemsRef, { [category]: [...currentItems, newItem] });
         setNewItems(prev => ({...prev, [category]: ''}));
+      } catch (error: any) {
+        toast({ title: 'Error adding item', description: error.message, variant: 'destructive' });
       }
     });
   };
@@ -58,9 +60,11 @@ export default function SidebarContentComponent({ mealItems }: SidebarContentCom
     if (!mealItems || !user) return;
     const updatedItems = (mealItems[category] || []).filter(item => item !== itemToRemove);
     startTransition(async () => {
-      const result = await updateMealItem(user.uid, category, updatedItems);
-      if (result?.error) {
-        toast({ title: 'Error removing item', description: result.error, variant: 'destructive' });
+      try {
+        const mealItemsRef = doc(firestore, 'users', user.uid, 'data', 'meal-items');
+        await updateDoc(mealItemsRef, { [category]: updatedItems });
+      } catch (error: any) {
+        toast({ title: 'Error removing item', description: error.message, variant: 'destructive' });
       }
     });
   }

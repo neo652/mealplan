@@ -26,7 +26,7 @@ export default function Dashboard({ mealItems, dailyMeals }: DashboardProps) {
       </Sidebar>
       <SidebarInset>
         <div className="flex h-full flex-col">
-          <AppHeader />
+          <AppHeader mealItems={mealItems} />
           <main className="flex-1 overflow-y-auto p-4 md:p-6">
             {dailyMeals ? <MealPlanDisplay meals={dailyMeals} mealItems={mealItems} /> : <div className="flex h-full items-center justify-center"><LoadingSpinner /></div>}
           </main>
