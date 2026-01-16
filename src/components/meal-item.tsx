@@ -1,6 +1,6 @@
 'use client';
 
-import type { MealCategory, RawMealItems } from '@/lib/types';
+import type { MealCategory, MealItems } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, ChevronDown } from 'lucide-react';
 import { MealIcons } from '@/components/icons';
@@ -14,34 +14,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import LoadingSpinner from './loading-spinner';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
 
 type MealItemProps = {
   day: number;
   category: MealCategory;
   mealName: string;
+  mealItems: MealItems | null;
 };
 
-export default function MealItem({ day, category, mealName }: MealItemProps) {
+export default function MealItem({ day, category, mealName, mealItems }: MealItemProps) {
   const { user } = useUser();
-  const firestore = useFirestore();
   const [isRefreshing, startRefreshTransition] = useTransition();
   const [isChanging, startChangeTransition] = useTransition();
   const { toast } = useToast();
-
-  const mealItemsRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(firestore, 'users', user.uid, 'data', 'meal-items');
-  }, [firestore, user]);
-
-  const { data: mealItemsData } = useCollection<RawMealItems>(
-    useMemoFirebase(() => {
-      if (!mealItemsRef) return null;
-      return collection(mealItemsRef.parent, mealItemsRef.id);
-    }, [mealItemsRef])
-  );
-  const mealItems = mealItemsData?.[0];
 
   const Icon = MealIcons[category];
   const availableMeals = mealItems ? mealItems[category] : [];

@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser, useCollection, useMemoFirebase, useFirestore } from '@/firebase';
+import { useUser, useCollection, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import InitialSetupForm from '@/components/initial-setup-form';
 import Dashboard from '@/components/dashboard';
@@ -17,17 +17,7 @@ export default function ClientPage() {
     return doc(firestore, 'users', user.uid, 'data', 'meal-items');
   }, [firestore, user]);
 
-  // The useDoc hook is not available in the scaffolded files, so we'll use useCollection and take the first item.
-  // This is a temporary workaround.
-  const { data: mealItemsData, isLoading: isMealItemsLoading } = useCollection<MealItems>(
-    useMemoFirebase(() => {
-      if (!mealItemsRef) return null;
-      // This is not a real collection, but we adapt to the hook we have
-      return collection(mealItemsRef.parent, mealItemsRef.id);
-    }, [mealItemsRef])
-  );
-  const mealItems = mealItemsData?.[0];
-
+  const { data: mealItems, isLoading: isMealItemsLoading } = useDoc<MealItems>(mealItemsRef);
 
   const dailyMealsRef = useMemoFirebase(() => {
     if (!user) return null;

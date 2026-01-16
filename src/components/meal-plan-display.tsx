@@ -28,14 +28,14 @@ export default function MealPlanDisplay({ meals, mealItems }: MealPlanDisplayPro
       <TabsContent value="week1">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {week1.map((meal, index) => (
-            <DayCard key={`day-${index + 1}`} day={index + 1} meal={meal} isCurrentDay={index === currentDayIndex} />
+            <DayCard key={`day-${index + 1}`} day={index + 1} meal={meal} isCurrentDay={index === currentDayIndex} mealItems={mealItems} />
           ))}
         </div>
       </TabsContent>
       <TabsContent value="week2">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {week2.map((meal, index) => (
-            <DayCard key={`day-${index + 8}`} day={index + 8} meal={meal} isCurrentDay={index + 7 === currentDayIndex} />
+            <DayCard key={`day-${index + 8}`} day={index + 8} meal={meal} isCurrentDay={index + 7 === currentDayIndex} mealItems={mealItems} />
           ))}
         </div>
       </TabsContent>

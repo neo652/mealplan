@@ -1,4 +1,4 @@
-import type { DailyMeal, MealCategory } from '@/lib/types';
+import type { DailyMeal, MealCategory, MealItems } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import MealItem from './meal-item';
 import { MEAL_CATEGORIES } from '@/lib/constants';
@@ -9,9 +9,10 @@ type DayCardProps = {
   day: number;
   meal: DailyMeal;
   isCurrentDay: boolean;
+  mealItems: MealItems | null;
 };
 
-export default function DayCard({ day, meal, isCurrentDay }: DayCardProps) {
+export default function DayCard({ day, meal, isCurrentDay, mealItems }: DayCardProps) {
   const dayDate = new Date(meal.date);
 
   return (
@@ -29,6 +30,7 @@ export default function DayCard({ day, meal, isCurrentDay }: DayCardProps) {
             day={day}
             category={category as MealCategory}
             mealName={meal[category as  keyof Omit<DailyMeal, 'date'>]}
+            mealItems={mealItems}
           />
         ))}
       </CardContent>
