@@ -41,8 +41,10 @@ export default function ClientPage() {
     return <InitialSetupForm />;
   }
 
-  // Sorting meals by date. This is safe to do here since we'll pass `null` to the dashboard if `dailyMeals` is still loading.
-  const sortedDailyMeals = dailyMeals?.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  // Sorting meals by date. We create a new sorted array to avoid mutating state directly.
+  const sortedDailyMeals = dailyMeals
+    ? [...dailyMeals].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    : [];
 
-  return <Dashboard mealItems={mealItems} dailyMeals={isDailyMealsLoading ? null : (sortedDailyMeals ?? [])} />;
+  return <Dashboard mealItems={mealItems} dailyMeals={isDailyMealsLoading ? null : sortedDailyMeals} />;
 }
