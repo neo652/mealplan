@@ -15,84 +15,79 @@
         "id"
       ]
     },
-    "MealItem": {
+    "MealItemsDocument": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "MealItem",
+      "title": "Meal Items Document",
       "type": "object",
-      "description": "Represents a single meal item, such as a breakfast, lunch, dinner, or snack option.",
+      "description": "A single document containing all of a user's meal items, grouped by category.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the MealItem entity."
+        "breakfast": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of breakfast meal items."
         },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N MealItem)"
+        "lunch": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of lunch meal items."
         },
-        "category": {
-          "type": "string",
-          "description": "The category of the meal item (e.g., Breakfast, Lunch, Dinner, Snack)."
+        "dinner": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of dinner meal items."
         },
-        "name": {
-          "type": "string",
-          "description": "The name of the meal item (e.g., Oatmeal, Salad, Chicken Stir-fry)."
+        "snack": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of snack meal items."
         },
-        "description": {
+        "planStartDate": {
           "type": "string",
-          "description": "A brief description of the meal item, including key ingredients or preparation details."
+          "format": "date-time",
+          "description": "The start date of the current meal plan."
         }
       },
       "required": [
-        "id",
-        "userId",
-        "category",
-        "name"
+        "breakfast",
+        "lunch",
+        "dinner",
+        "snack"
       ]
     },
-    "DailyMealPlan": {
+    "DailyMeal": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "DailyMealPlan",
+      "title": "Daily Meal",
       "type": "object",
-      "description": "Represents a meal plan for a single day, including breakfast, lunch, dinner, and snack.",
+      "description": "Represents the planned meals for a single day.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the DailyMealPlan entity."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N DailyMealPlan)"
-        },
         "date": {
           "type": "string",
-          "description": "The date for which the meal plan is created. (YYYY-MM-DD)",
-          "format": "date"
+          "format": "date-time",
+          "description": "The date for which the meal plan is created."
         },
-        "breakfastId": {
+        "breakfast": {
           "type": "string",
-          "description": "Reference to MealItem for breakfast. (Relationship: MealItem 1:1 DailyMealPlan)"
+          "description": "The selected breakfast meal for the day."
         },
-        "lunchId": {
+        "lunch": {
           "type": "string",
-          "description": "Reference to MealItem for lunch. (Relationship: MealItem 1:1 DailyMealPlan)"
+          "description": "The selected lunch meal for the day."
         },
-        "dinnerId": {
+        "dinner": {
           "type": "string",
-          "description": "Reference to MealItem for dinner. (Relationship: MealItem 1:1 DailyMealPlan)"
+          "description": "The selected dinner meal for the day."
         },
-        "snackId": {
+        "snack": {
           "type": "string",
-          "description": "Reference to MealItem for snack. (Relationship: MealItem 1:1 DailyMealPlan)"
+          "description": "The selected snack for the day."
         }
       },
       "required": [
-        "id",
-        "userId",
         "date",
-        "breakfastId",
-        "lunchId",
-        "dinnerId",
-        "snackId"
+        "breakfast",
+        "lunch",
+        "dinner",
+        "snack"
       ]
     }
   },
@@ -121,31 +116,27 @@
         }
       },
       {
-        "path": "/users/{userId}/meal_items/{mealItemId}",
+        "path": "/users/{userId}/data/meal-items",
         "definition": {
-          "entityName": "MealItem",
+          "entityName": "MealItemsDocument",
           "schema": {
-            "$ref": "#/backend/entities/MealItem"
+            "$ref": "#/backend/entities/MealItemsDocument"
           },
-          "description": "Stores individual meal items for a user.",
+          "description": "A single document that stores all of a user's meal items.",
           "params": [
             {
               "name": "userId",
               "description": "The unique identifier for the user."
-            },
-            {
-              "name": "mealItemId",
-              "description": "The unique identifier for the meal item."
             }
           ]
         }
       },
       {
-        "path": "/users/{userId}/daily_meal_plans/{dailyMealPlanId}",
+        "path": "/users/{userId}/daily-meals/{dayId}",
         "definition": {
-          "entityName": "DailyMealPlan",
+          "entityName": "DailyMeal",
           "schema": {
-            "$ref": "#/backend/entities/DailyMealPlan"
+            "$ref": "#/backend/entities/DailyMeal"
           },
           "description": "Stores daily meal plans for a user.",
           "params": [
@@ -154,13 +145,13 @@
               "description": "The unique identifier for the user."
             },
             {
-              "name": "dailyMealPlanId",
-              "description": "The unique identifier for the daily meal plan."
+              "name": "dayId",
+              "description": "The unique identifier for the daily meal plan (e.g., 'day-1')."
             }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to store meal planning data for users who are anonymously authenticated. User data is organized under the `/users/{userId}` path, ensuring data isolation and path-based ownership, which simplifies security rules. Each user has their meal items stored in a subcollection `/users/{userId}/meal_items/{mealItemId}` and daily meal plans stored in `/users/{userId}/daily_meal_plans/{dailyMealPlanId}`. This hierarchical structure facilitates easy querying and management of user-specific data.\n\nThis structure achieves Authorization Independence by relying on path-based ownership: access control is based on the `userId` in the path, eliminating the need for `get()` calls to parent documents. Security rules can simply check if `request.auth.uid == userId`. The structure supports the QAPs (Rules are Not Filters) principle because list operations are scoped to the user ID.  Listing meal items or daily meal plans only requires checking that the authenticated user ID matches the user ID in the path, preventing unauthorized access to other users' data. All data within a given collection shares the same security requirements based on ownership."
+    "reasoning": "The Firestore structure is designed to store meal planning data for users who are anonymously authenticated. User data is organized under the `/users/{userId}` path, ensuring data isolation and path-based ownership, which simplifies security rules. Each user has their meal items stored in a single document at `/users/{userId}/data/meal-items` and daily meal plans stored in the `/users/{userId}/daily-meals/{dayId}` collection. This hierarchical structure facilitates easy querying and management of user-specific data.\n\nThis structure achieves Authorization Independence by relying on path-based ownership: access control is based on the `userId` in the path, eliminating the need for `get()` calls to parent documents. Security rules can simply check if `request.auth.uid == userId`. The structure supports the QAPs (Rules are Not Filters) principle because list operations are scoped to the user ID.  Listing daily meals only requires checking that the authenticated user ID matches the user ID in the path, preventing unauthorized access to other users' data. All data within a given collection shares the same security requirements based on ownership."
   }
 }

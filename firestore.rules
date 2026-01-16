@@ -9,7 +9,7 @@
  *
  * ## Data Structure
  * The data is organized hierarchically. A top-level `/users` collection holds individual user documents. All other
- * user-specific data, such as `meal_items` and `daily_meal_plans`, are stored in subcollections under the
+ * user-specific data, such as `data` and `daily-meals`, are stored in subcollections under the
  * corresponding `/users/{userId}` document.
  *
  * ## Key Security Decisions
@@ -55,36 +55,27 @@ service cloud.firestore {
     }
 
     /**
-     * @description Secures a user's private collection of meal items. Only the owner can manage their items.
-     * @path /users/{userId}/meal_items/{mealItemId}
-     * @allow (create) User 'user-abc' creating a new meal item at `/users/user-abc/meal_items/omelette`.
-     * @allow (list) User 'user-abc' listing all documents under `/users/user-abc/meal_items`.
-     * @deny (update) User 'user-xyz' trying to update a meal item at `/users/user-abc/meal_items/omelette`.
+     * @description Secures user-specific configuration data, like the list of all meal items.
+     * @path /users/{userId}/data/{docId}
+     * @allow (read, write) User 'user-abc' managing their data document at `/users/user-abc/data/meal-items`.
+     * @deny (read, write) User 'user-xyz' trying to access `/users/user-abc/data/meal-items`.
      * @principle Restricts all access to a user's own data tree using path-based ownership.
      */
-    match /users/{userId}/meal_items/{mealItemId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
+    match /users/{userId}/data/{docId} {
+        allow read, write: if isOwner(userId);
     }
 
     /**
      * @description Secures a user's private collection of daily meal plans. Only the owner can manage their plans.
-     * @path /users/{userId}/daily_meal_plans/{dailyMealPlanId}
-     * @allow (read) User 'user-abc' reading their own meal plan at `/users/user-abc/daily_meal_plans/2024-05-20`.
-     * @allow (delete) User 'user-abc' deleting their own plan at `/users/user-abc/daily_meal_plans/2024-05-20`.
+     * @path /users/{userId}/daily-meals/{dayId}
+     * @allow (read) User 'user-abc' reading their own meal plan at `/users/user-abc/daily-meals/2024-05-20`.
+     * @allow (delete) User 'user-abc' deleting their own plan at `/users/user-abc/daily-meals/2024-05-20`.
      * @deny (read) An unauthenticated user trying to read any meal plan.
-     * @deny (create) User 'user-xyz' trying to create a plan under `/users/user-abc/daily_meal_plans`.
+     * @deny (create) User 'user-xyz' trying to create a plan under `/users/user-abc/daily-meals`.
      * @principle Restricts all access to a user's own data tree using path-based ownership.
      */
-    match /users/{userId}/daily_meal_plans/{dailyMealPlanId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
+    match /users/{userId}/daily-meals/{dayId} {
+        allow read, write: if isOwner(userId);
     }
   }
 }
