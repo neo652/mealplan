@@ -74,6 +74,9 @@ export default function InitialSetupForm() {
         const batch = writeBatch(firestore);
         const planStartDate = new Date();
         
+        const userDocRef = doc(firestore, 'users', user.uid);
+        batch.set(userDocRef, { id: user.uid });
+
         const mealItemsRef = doc(firestore, 'users', user.uid, 'data', 'meal-items');
         batch.set(mealItemsRef, { ...mealItems, planStartDate: formatISO(planStartDate) });
 
