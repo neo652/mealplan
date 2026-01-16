@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import LoadingSpinner from './loading-spinner';
-import { updateSingleMeal } from '@/ai/flows/suggest-alternative-meal';
+import { suggestLocalAlternative } from '@/lib/meal-plan-generator';
 import { doc, updateDoc } from 'firebase/firestore';
 
 type MealItemProps = {
@@ -37,14 +37,10 @@ export default function MealItem({ day, category, mealName, mealItems }: MealIte
     if (!user) return;
     startRefreshTransition(async () => {
       try {
-        const result = await updateSingleMeal({
-            mealType: category,
-            availableMeals,
-            currentMeal: mealName,
-        });
+        const suggestedMeal = suggestLocalAlternative(availableMeals, mealName);
 
         const dayRef = doc(firestore, `users/${user.uid}/daily-meals/day-${day}`);
-        await updateDoc(dayRef, { [category]: result.suggestedMeal });
+        await updateDoc(dayRef, { [category]: suggestedMeal });
         
       } catch (error: any) {
         toast({

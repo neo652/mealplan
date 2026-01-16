@@ -22,7 +22,7 @@ import { MEAL_CATEGORIES } from '@/lib/constants';
 import type { MealCategory } from '@/lib/types';
 import Image from 'next/image';
 import {PlaceHolderImages} from '@/lib/placeholder-images';
-import { suggestNewMealPlan } from '@/ai/flows/generate-meal-plan';
+import { generateLocalMealPlan } from '@/lib/meal-plan-generator';
 import { writeBatch, doc } from 'firebase/firestore';
 import { addDays, formatISO } from 'date-fns';
 
@@ -64,12 +64,7 @@ export default function InitialSetupForm() {
       };
 
       try {
-        const plan = await suggestNewMealPlan({
-          breakfastItems: mealItems.breakfast,
-          lunchItems: mealItems.lunch,
-          dinnerItems: mealItems.dinner,
-          snackItems: mealItems.snack,
-        });
+        const plan = generateLocalMealPlan(mealItems);
 
         const batch = writeBatch(firestore);
         const planStartDate = new Date();

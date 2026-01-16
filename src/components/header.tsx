@@ -7,7 +7,7 @@ import { useTransition } from 'react';
 import { useUser, useToast, useFirestore } from '@/firebase';
 import LoadingSpinner from './loading-spinner';
 import { MealItems } from '@/lib/types';
-import { suggestNewMealPlan } from '@/ai/flows/generate-meal-plan';
+import { generateLocalMealPlan } from '@/lib/meal-plan-generator';
 import { writeBatch, doc } from 'firebase/firestore';
 import { addDays, formatISO } from 'date-fns';
 
@@ -22,11 +22,11 @@ export default function AppHeader({ mealItems }: { mealItems: MealItems | null }
     if (!user || !mealItems) return;
     startTransition(async () => {
       try {
-        const plan = await suggestNewMealPlan({
-          breakfastItems: mealItems.breakfast,
-          lunchItems: mealItems.lunch,
-          dinnerItems: mealItems.dinner,
-          snackItems: mealItems.snack,
+        const plan = generateLocalMealPlan({
+          breakfast: mealItems.breakfast,
+          lunch: mealItems.lunch,
+          dinner: mealItems.dinner,
+          snack: mealItems.snack,
         });
 
         const batch = writeBatch(firestore);
