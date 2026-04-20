@@ -16,7 +16,6 @@ import LoadingSpinner from './loading-spinner';
 import { suggestLocalAlternative } from '@/lib/meal-plan-generator';
 import { doc, updateDoc } from 'firebase/firestore';
 import { planDailyMealPath } from '@/lib/plans';
-import { trackEvent } from '@/lib/analytics';
 import { cn } from '@/lib/utils';
 
 type MealItemProps = {
@@ -60,7 +59,6 @@ export default function MealItem({
         const suggestedMeal = suggestLocalAlternative(availableMeals, mealName);
         const dayRef = doc(firestore, planDailyMealPath(planId, `day-${day}`));
         await updateDoc(dayRef, { [category]: suggestedMeal });
-        trackEvent('meal_swapped', { category, method: 'shuffle' });
       } catch (error: any) {
         toast({
           title: `Could not refresh ${category}`,
@@ -77,7 +75,6 @@ export default function MealItem({
       try {
         const dayRef = doc(firestore, planDailyMealPath(planId, `day-${day}`));
         await updateDoc(dayRef, { [category]: newMeal });
-        trackEvent('meal_swapped', { category, method: 'pick' });
         setPickerOpen(false);
         setQuery('');
       } catch (error: any) {

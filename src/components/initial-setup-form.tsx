@@ -24,7 +24,6 @@ import { generateLocalMealPlan } from '@/lib/meal-plan-generator';
 import { writeBatch, doc } from 'firebase/firestore';
 import { addDays, formatISO } from 'date-fns';
 import { planDailyMealPath, planMealItemsPath, touchPlan } from '@/lib/plans';
-import { trackEvent } from '@/lib/analytics';
 
 const formSchema = z.object({
   breakfast: z.string().min(1, 'Please enter at least one breakfast item.'),
@@ -85,7 +84,6 @@ export default function InitialSetupForm({ plan }: Props) {
 
         await batch.commit();
         await touchPlan(firestore, plan.id, plan.name);
-        trackEvent('plan_generated', { source: 'initial_setup' });
       } catch (error: any) {
         toast({
           title: 'Error',
