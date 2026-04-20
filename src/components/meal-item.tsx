@@ -144,7 +144,7 @@ export default function MealItem({
                     selected && 'bg-accent/30 font-medium',
                   )}
                 >
-                  <span className="truncate capitalize">{meal}</span>
+                  <span className="min-w-0 flex-1 break-words capitalize">{meal}</span>
                   {selected && <Check className="h-3.5 w-3.5 text-primary" />}
                 </button>
               );
@@ -157,9 +157,11 @@ export default function MealItem({
 
   if (isCompact) {
     return (
-      <div className="flex items-center justify-between gap-2">
-        <p className="truncate text-sm font-semibold capitalize">{mealName}</p>
-        <div className="flex items-center">
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 flex-1 break-words text-sm font-semibold capitalize leading-snug">
+          {mealName}
+        </p>
+        <div className="flex flex-shrink-0 items-center">
           <Button
             variant="ghost"
             size="icon"
@@ -177,15 +179,15 @@ export default function MealItem({
   }
 
   return (
-    <div className="flex items-center justify-between gap-2">
-      <div className="flex items-center gap-3 truncate">
-        <Icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-        <div className="truncate">
-          <p className="text-sm font-semibold capitalize truncate">{mealName}</p>
-          <p className="text-xs text-muted-foreground capitalize">{category}</p>
+    <div className="flex items-start justify-between gap-2">
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <Icon className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground" />
+        <div className="min-w-0 flex-1">
+          <p className="break-words text-sm font-semibold capitalize leading-snug">{mealName}</p>
+          <p className="text-xs capitalize text-muted-foreground">{category}</p>
         </div>
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex flex-shrink-0 items-center gap-1">
         <Button
           variant="ghost"
           size="icon"
