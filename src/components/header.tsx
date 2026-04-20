@@ -10,6 +10,7 @@ import { MealItems } from '@/lib/types';
 import { generateLocalMealPlan } from '@/lib/meal-plan-generator';
 import { writeBatch, doc } from 'firebase/firestore';
 import { addDays, formatISO } from 'date-fns';
+import { APP_OWNER_UID } from '@/lib/constants';
 
 
 export default function AppHeader({ mealItems }: { mealItems: MealItems | null }) {
@@ -32,11 +33,11 @@ export default function AppHeader({ mealItems }: { mealItems: MealItems | null }
         const batch = writeBatch(firestore);
         const planStartDate = new Date();
         
-        const mealItemsRef = doc(firestore, 'users', user.uid, 'data', 'meal-items');
+        const mealItemsRef = doc(firestore, 'users', APP_OWNER_UID, 'data', 'meal-items');
         batch.update(mealItemsRef, { planStartDate: formatISO(planStartDate) });
 
         plan.forEach((dailyMeal, index) => {
-          const dayRef = doc(firestore, `users/${user.uid}/daily-meals/day-${index + 1}`);
+          const dayRef = doc(firestore, `users/${APP_OWNER_UID}/daily-meals/day-${index + 1}`);
           const mealDate = addDays(planStartDate, index);
           batch.set(dayRef, { ...dailyMeal, date: formatISO(mealDate) });
         });

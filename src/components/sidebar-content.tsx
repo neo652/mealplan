@@ -16,7 +16,7 @@ import { FormEvent, useState, useTransition } from 'react';
 import LoadingSpinner from './loading-spinner';
 import { SidebarHeader, SidebarContent, SidebarFooter } from './ui/sidebar';
 import type { MealCategory, MealItems } from '@/lib/types';
-import { MEAL_CATEGORIES } from '@/lib/constants';
+import { MEAL_CATEGORIES, APP_OWNER_UID } from '@/lib/constants';
 import { doc, updateDoc } from 'firebase/firestore';
 
 interface SidebarContentComponentProps {
@@ -47,7 +47,7 @@ export default function SidebarContentComponent({ mealItems }: SidebarContentCom
 
     startTransition(async () => {
       try {
-        const mealItemsRef = doc(firestore, 'users', user.uid, 'data', 'meal-items');
+        const mealItemsRef = doc(firestore, 'users', APP_OWNER_UID, 'data', 'meal-items');
         await updateDoc(mealItemsRef, { [category]: [...currentItems, newItem] });
         setNewItems(prev => ({...prev, [category]: ''}));
       } catch (error: any) {
@@ -61,7 +61,7 @@ export default function SidebarContentComponent({ mealItems }: SidebarContentCom
     const updatedItems = (mealItems[category] || []).filter(item => item !== itemToRemove);
     startTransition(async () => {
       try {
-        const mealItemsRef = doc(firestore, 'users', user.uid, 'data', 'meal-items');
+        const mealItemsRef = doc(firestore, 'users', APP_OWNER_UID, 'data', 'meal-items');
         await updateDoc(mealItemsRef, { [category]: updatedItems });
       } catch (error: any) {
         toast({ title: 'Error removing item', description: error.message, variant: 'destructive' });

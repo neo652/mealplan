@@ -46,11 +46,17 @@ service cloud.firestore {
      * @deny (list) Any user trying to list all documents in the `/users` collection.
      * @principle Enforces self-creation and ownership of the root user document and prevents user enumeration.
      */
+    // MealGenius is a single-owner personal app. APP_OWNER_UID is the fixed owner.
+    // Any signed-in (anonymous) user may read/write the owner's tree.
+    function isAppOwnerPath(userId) {
+      return userId == 'rP07763S2bNDtZcxoAaBnbyEvs92';
+    }
+
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      allow get: if isOwner(userId) || (isSignedIn() && isAppOwnerPath(userId));
       allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow create: if (isOwner(userId) || (isSignedIn() && isAppOwnerPath(userId))) && request.resource.data.id == userId;
+      allow update: if isSignedIn() && isAppOwnerPath(userId) && request.resource.data.id == resource.data.id;
       allow delete: if false;
     }
 
@@ -62,7 +68,7 @@ service cloud.firestore {
      * @principle Restricts all access to a user's own data tree using path-based ownership.
      */
     match /users/{userId}/data/{docId} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || (isSignedIn() && isAppOwnerPath(userId));
     }
 
     /**
@@ -75,7 +81,7 @@ service cloud.firestore {
      * @principle Restricts all access to a user's own data tree using path-based ownership.
      */
     match /users/{userId}/daily-meals/{dayId} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || (isSignedIn() && isAppOwnerPath(userId));
     }
   }
 }
