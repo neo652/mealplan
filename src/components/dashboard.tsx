@@ -19,7 +19,6 @@ import { generateLocalMealPlan } from '@/lib/meal-plan-generator';
 import { writeBatch, doc } from 'firebase/firestore';
 import { addDays, formatISO } from 'date-fns';
 import { planDailyMealPath, planMealItemsPath, touchPlan } from '@/lib/plans';
-import { trackEvent } from '@/lib/analytics';
 
 interface DashboardProps {
   plan: { id: string; name: string };
@@ -105,7 +104,6 @@ function EmptyPlanState({
         });
         await batch.commit();
         await touchPlan(firestore, plan.id, plan.name);
-        trackEvent('plan_generated', { source: 'empty_state' });
         toast({ title: 'Plan ready!', description: `Generated 14 days for ${plan.name}.` });
       } catch (err: any) {
         toast({ title: 'Error', description: err?.message ?? 'Unknown error', variant: 'destructive' });

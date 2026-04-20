@@ -20,7 +20,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { avatarGradient, initialsOf } from '@/lib/constants';
 import { listPlans, planDailyMealPath, planMealItemsPath, PlanSummary, touchPlan } from '@/lib/plans';
-import { trackEvent } from '@/lib/analytics';
 
 type Props = {
   plan: { id: string; name: string };
@@ -67,7 +66,6 @@ export default function AppHeader({ plan, mealItems, onSwitchPlan, onSelectPlan 
 
         await batch.commit();
         await touchPlan(firestore, plan.id, plan.name);
-        trackEvent('plan_generated', { source: 'header' });
 
         toast({
           title: 'Fresh plan ready!',
@@ -131,10 +129,7 @@ export default function AppHeader({ plan, mealItems, onSwitchPlan, onSelectPlan 
                 {otherPlans.slice(0, 6).map(p => (
                   <DropdownMenuItem
                     key={p.id}
-                    onSelect={() => {
-                      trackEvent('plan_switched');
-                      onSelectPlan({ id: p.id, name: p.name });
-                    }}
+                    onSelect={() => onSelectPlan({ id: p.id, name: p.name })}
                   >
                     <span
                       className={`mr-2 flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br ${avatarGradient(
