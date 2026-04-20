@@ -22,10 +22,16 @@ export default function MealPlanDisplay({ planId, meals, mealItems }: MealPlanDi
 
   return (
     <Tabs defaultValue="week1" className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="week1">Week 1</TabsTrigger>
-        <TabsTrigger value="week2">Week 2</TabsTrigger>
-      </TabsList>
+      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h3 className="font-headline text-xl font-semibold">The full 14-day plan</h3>
+          <p className="text-sm text-muted-foreground">Swap any meal or shuffle a day with one tap.</p>
+        </div>
+        <TabsList className="grid w-full grid-cols-2 sm:w-64">
+          <TabsTrigger value="week1">Week 1</TabsTrigger>
+          <TabsTrigger value="week2">Week 2</TabsTrigger>
+        </TabsList>
+      </div>
       <TabsContent value="week1">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {week1.map((meal, index) => (

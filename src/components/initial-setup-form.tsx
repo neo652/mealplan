@@ -16,16 +16,15 @@ import { Button } from '@/components/ui/button';
 import { useTransition } from 'react';
 import { useUser, useToast, useFirestore } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UtensilsCrossed } from 'lucide-react';
+import { UtensilsCrossed, Sparkles } from 'lucide-react';
 import LoadingSpinner from './loading-spinner';
-import { MEAL_CATEGORIES } from '@/lib/constants';
+import { MEAL_CATEGORIES, avatarGradient, initialsOf } from '@/lib/constants';
 import type { MealCategory } from '@/lib/types';
-import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { generateLocalMealPlan } from '@/lib/meal-plan-generator';
 import { writeBatch, doc } from 'firebase/firestore';
 import { addDays, formatISO } from 'date-fns';
 import { planDailyMealPath, planMealItemsPath, touchPlan } from '@/lib/plans';
+import { trackEvent } from '@/lib/analytics';
 
 const formSchema = z.object({
   breakfast: z.string().min(1, 'Please enter at least one breakfast item.'),
@@ -43,7 +42,6 @@ export default function InitialSetupForm({ plan }: Props) {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
-  const formImage = PlaceHolderImages.find(p => p.id === 'initial-setup-hero');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -87,6 +85,7 @@ export default function InitialSetupForm({ plan }: Props) {
 
         await batch.commit();
         await touchPlan(firestore, plan.id, plan.name);
+        trackEvent('plan_generated', { source: 'initial_setup' });
       } catch (error: any) {
         toast({
           title: 'Error',
@@ -97,34 +96,39 @@ export default function InitialSetupForm({ plan }: Props) {
     });
   }
 
+  const gradient = avatarGradient(plan.name);
+  const initials = initialsOf(plan.name);
+
   return (
-    <div className="relative flex min-h-screen items-center justify-center p-4">
-      {formImage && (
-        <Image
-          src={formImage.imageUrl}
-          alt={formImage.description}
-          fill
-          className="object-cover -z-10 brightness-50"
-          data-ai-hint={formImage.imageHint}
-        />
-      )}
-      <Card className="w-full max-w-4xl">
-        <CardHeader className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <UtensilsCrossed className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl font-bold font-headline">Welcome, {plan.name}</h1>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden p-4 md:p-8">
+      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-background via-background to-primary/20" />
+      <div className="absolute -z-10 top-1/4 -left-24 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
+      <div className="absolute -z-10 bottom-0 right-0 h-96 w-96 rounded-full bg-accent/20 blur-3xl" />
+
+      <Card className="w-full max-w-4xl border-border/60 bg-card/80 backdrop-blur shadow-xl">
+        <CardHeader className="text-center pb-4">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <span
+              className={`flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br ${gradient} text-xl font-bold text-white shadow-md ring-4 ring-background`}
+            >
+              {initials}
+            </span>
           </div>
-          <CardTitle className="text-2xl font-headline">Let's set up your meals</CardTitle>
-          <CardDescription>
-            Enter your favorite meals to generate your first personalized plan.
-            <br />
-            Place each meal on a new line.
+          <div className="flex items-center justify-center gap-2">
+            <UtensilsCrossed className="h-6 w-6 text-primary" />
+            <h1 className="text-3xl md:text-4xl font-bold font-headline">Welcome, {plan.name}</h1>
+          </div>
+          <CardTitle className="text-xl font-headline mt-1 font-normal text-muted-foreground">
+            Let's set up your meals
+          </CardTitle>
+          <CardDescription className="mt-1">
+            Enter your favorite meals — one per line — and we'll build your first 14-day plan.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 {MEAL_CATEGORIES.map(category => (
                   <FormField
                     key={category}
@@ -132,11 +136,11 @@ export default function InitialSetupForm({ plan }: Props) {
                     name={category as MealCategory}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="capitalize text-lg font-headline">{category}</FormLabel>
+                        <FormLabel className="capitalize text-base font-headline">{category}</FormLabel>
                         <FormControl>
                           <Textarea
                             placeholder={`Oatmeal\nScrambled Eggs\nSmoothie...`}
-                            className="resize-none h-40"
+                            className="resize-none h-36 bg-background/60"
                             {...field}
                           />
                         </FormControl>
@@ -146,8 +150,15 @@ export default function InitialSetupForm({ plan }: Props) {
                   />
                 ))}
               </div>
-              <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending ? <LoadingSpinner /> : 'Generate My Meal Plan'}
+              <Button type="submit" className="w-full" disabled={isPending} size="lg">
+                {isPending ? (
+                  <LoadingSpinner />
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generate my meal plan
+                  </>
+                )}
               </Button>
             </form>
           </Form>
