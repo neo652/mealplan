@@ -5,31 +5,34 @@ import { collection, doc } from 'firebase/firestore';
 import InitialSetupForm from '@/components/initial-setup-form';
 import Dashboard from '@/components/dashboard';
 import LoadingSpinner from '@/components/loading-spinner';
+import PlanPicker from '@/components/plan-picker';
+import { useCurrentPlan } from '@/hooks/use-current-plan';
 import type { MealItems, DailyMeal } from '@/lib/types';
-import { APP_OWNER_UID } from '@/lib/constants';
+import { planDailyMealPath, planMealItemsPath } from '@/lib/plans';
 
 
 export default function ClientPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const { plan, isHydrated, selectPlan, clearPlan } = useCurrentPlan();
+
+  const planId = plan?.id ?? null;
 
   const mealItemsRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(firestore, 'users', APP_OWNER_UID, 'data', 'meal-items');
-  }, [firestore, user]);
+    if (!user || !planId) return null;
+    return doc(firestore, planMealItemsPath(planId));
+  }, [firestore, user, planId]);
 
   const { data: mealItems, isLoading: isMealItemsLoading } = useDoc<MealItems>(mealItemsRef);
 
   const dailyMealsRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return collection(firestore, `users/${APP_OWNER_UID}/daily-meals`);
-  }, [firestore, user]);
+    if (!user || !planId) return null;
+    return collection(firestore, `plans/${planId}/daily-meals`);
+  }, [firestore, user, planId]);
 
   const { data: dailyMeals, isLoading: isDailyMealsLoading } = useCollection<DailyMeal>(dailyMealsRef);
 
-  // Show a spinner while the user auth state is loading, or if we have a user but are still fetching their meal items.
-  // This prevents showing the setup form prematurely before we have checked if data exists.
-  if (isUserLoading || (user && isMealItemsLoading)) {
+  if (!isHydrated || isUserLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <LoadingSpinner className="h-12 w-12" />
@@ -37,15 +40,33 @@ export default function ClientPage() {
     );
   }
 
-  // After loading, if we don't have meal items, it means it's the first time use or data was cleared.
-  if (!mealItems) {
-    return <InitialSetupForm />;
+  if (!plan) {
+    return <PlanPicker onPlanSelected={selectPlan} />;
   }
 
-  // Sorting meals by date. We create a new sorted array to avoid mutating state directly.
+  if (user && isMealItemsLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <LoadingSpinner className="h-12 w-12" />
+      </div>
+    );
+  }
+
+  if (!mealItems) {
+    return <InitialSetupForm plan={plan} />;
+  }
+
   const sortedDailyMeals = dailyMeals
     ? [...dailyMeals].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     : [];
 
-  return <Dashboard mealItems={mealItems} dailyMeals={isDailyMealsLoading ? null : sortedDailyMeals} />;
+  return (
+    <Dashboard
+      plan={plan}
+      mealItems={mealItems}
+      dailyMeals={isDailyMealsLoading ? null : sortedDailyMeals}
+      onSwitchPlan={clearPlan}
+      onSelectPlan={selectPlan}
+    />
+  );
 }

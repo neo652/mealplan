@@ -18,13 +18,14 @@ import { useUser, useToast, useFirestore } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UtensilsCrossed } from 'lucide-react';
 import LoadingSpinner from './loading-spinner';
-import { MEAL_CATEGORIES, APP_OWNER_UID } from '@/lib/constants';
+import { MEAL_CATEGORIES } from '@/lib/constants';
 import type { MealCategory } from '@/lib/types';
 import Image from 'next/image';
-import {PlaceHolderImages} from '@/lib/placeholder-images';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { generateLocalMealPlan } from '@/lib/meal-plan-generator';
 import { writeBatch, doc } from 'firebase/firestore';
 import { addDays, formatISO } from 'date-fns';
+import { planDailyMealPath, planMealItemsPath, touchPlan } from '@/lib/plans';
 
 const formSchema = z.object({
   breakfast: z.string().min(1, 'Please enter at least one breakfast item.'),
@@ -33,7 +34,11 @@ const formSchema = z.object({
   snack: z.string().min(1, 'Please enter at least one snack item.'),
 });
 
-export default function InitialSetupForm() {
+type Props = {
+  plan: { id: string; name: string };
+};
+
+export default function InitialSetupForm({ plan }: Props) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const { user } = useUser();
@@ -52,8 +57,8 @@ export default function InitialSetupForm() {
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (!user) {
-        toast({ title: 'Error', description: 'You must be logged in to save your meal plan.', variant: 'destructive' });
-        return;
+      toast({ title: 'Error', description: 'Authentication is still initializing — try again.', variant: 'destructive' });
+      return;
     }
     startTransition(async () => {
       const mealItems = {
@@ -64,24 +69,24 @@ export default function InitialSetupForm() {
       };
 
       try {
-        const plan = generateLocalMealPlan(mealItems);
+        const generated = generateLocalMealPlan(mealItems);
 
         const batch = writeBatch(firestore);
         const planStartDate = new Date();
-        
-        const userDocRef = doc(firestore, 'users', APP_OWNER_UID);
-        batch.set(userDocRef, { id: APP_OWNER_UID });
 
-        const mealItemsRef = doc(firestore, 'users', APP_OWNER_UID, 'data', 'meal-items');
-        batch.set(mealItemsRef, { ...mealItems, planStartDate: formatISO(planStartDate) });
+        batch.set(
+          doc(firestore, planMealItemsPath(plan.id)),
+          { ...mealItems, planStartDate: formatISO(planStartDate) },
+        );
 
-        plan.forEach((dailyMeal, index) => {
-          const dayRef = doc(firestore, `users/${APP_OWNER_UID}/daily-meals/day-${index + 1}`);
+        generated.forEach((dailyMeal, index) => {
+          const dayRef = doc(firestore, planDailyMealPath(plan.id, `day-${index + 1}`));
           const mealDate = addDays(planStartDate, index);
           batch.set(dayRef, { ...dailyMeal, date: formatISO(mealDate) });
         });
 
         await batch.commit();
+        await touchPlan(firestore, plan.id, plan.name);
       } catch (error: any) {
         toast({
           title: 'Error',
@@ -94,24 +99,24 @@ export default function InitialSetupForm() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center p-4">
-        {formImage && (
-             <Image
-                src={formImage.imageUrl}
-                alt={formImage.description}
-                fill
-                className="object-cover -z-10 brightness-50"
-                data-ai-hint={formImage.imageHint}
-            />
-        )}
+      {formImage && (
+        <Image
+          src={formImage.imageUrl}
+          alt={formImage.description}
+          fill
+          className="object-cover -z-10 brightness-50"
+          data-ai-hint={formImage.imageHint}
+        />
+      )}
       <Card className="w-full max-w-4xl">
         <CardHeader className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-                <UtensilsCrossed className="h-8 w-8 text-primary" />
-                <h1 className="text-4xl font-bold font-headline">Welcome to MealGenius</h1>
-            </div>
-          <CardTitle className="text-2xl font-headline">Let's Get Started</CardTitle>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <UtensilsCrossed className="h-8 w-8 text-primary" />
+            <h1 className="text-4xl font-bold font-headline">Welcome, {plan.name}</h1>
+          </div>
+          <CardTitle className="text-2xl font-headline">Let's set up your meals</CardTitle>
           <CardDescription>
-            Enter your favorite meals to generate your first personalized meal plan.
+            Enter your favorite meals to generate your first personalized plan.
             <br />
             Place each meal on a new line.
           </CardDescription>

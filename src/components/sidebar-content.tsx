@@ -16,14 +16,16 @@ import { FormEvent, useState, useTransition } from 'react';
 import LoadingSpinner from './loading-spinner';
 import { SidebarHeader, SidebarContent, SidebarFooter } from './ui/sidebar';
 import type { MealCategory, MealItems } from '@/lib/types';
-import { MEAL_CATEGORIES, APP_OWNER_UID } from '@/lib/constants';
+import { MEAL_CATEGORIES, avatarGradient, initialsOf } from '@/lib/constants';
+import { planMealItemsPath } from '@/lib/plans';
 import { doc, updateDoc } from 'firebase/firestore';
 
 interface SidebarContentComponentProps {
+  plan: { id: string; name: string };
   mealItems: MealItems | null;
 }
 
-export default function SidebarContentComponent({ mealItems }: SidebarContentComponentProps) {
+export default function SidebarContentComponent({ plan, mealItems }: SidebarContentComponentProps) {
   const { user } = useUser();
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -47,7 +49,7 @@ export default function SidebarContentComponent({ mealItems }: SidebarContentCom
 
     startTransition(async () => {
       try {
-        const mealItemsRef = doc(firestore, 'users', APP_OWNER_UID, 'data', 'meal-items');
+        const mealItemsRef = doc(firestore, planMealItemsPath(plan.id));
         await updateDoc(mealItemsRef, { [category]: [...currentItems, newItem] });
         setNewItems(prev => ({...prev, [category]: ''}));
       } catch (error: any) {
@@ -61,7 +63,7 @@ export default function SidebarContentComponent({ mealItems }: SidebarContentCom
     const updatedItems = (mealItems[category] || []).filter(item => item !== itemToRemove);
     startTransition(async () => {
       try {
-        const mealItemsRef = doc(firestore, 'users', APP_OWNER_UID, 'data', 'meal-items');
+        const mealItemsRef = doc(firestore, planMealItemsPath(plan.id));
         await updateDoc(mealItemsRef, { [category]: updatedItems });
       } catch (error: any) {
         toast({ title: 'Error removing item', description: error.message, variant: 'destructive' });
@@ -77,7 +79,19 @@ export default function SidebarContentComponent({ mealItems }: SidebarContentCom
   return (
     <>
       <SidebarHeader>
-        <h2 className="text-lg font-semibold font-headline">Your Meal Lists</h2>
+        <div className="flex items-center gap-2.5 px-1 py-1">
+          <span
+            className={`flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br ${avatarGradient(
+              plan.name,
+            )} text-sm font-bold text-white shadow-sm`}
+          >
+            {initialsOf(plan.name)}
+          </span>
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold">{plan.name}</div>
+            <div className="text-xs text-muted-foreground">Meal lists</div>
+          </div>
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <ScrollArea className="h-full">

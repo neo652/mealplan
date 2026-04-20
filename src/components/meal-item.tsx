@@ -15,16 +15,17 @@ import {
 import LoadingSpinner from './loading-spinner';
 import { suggestLocalAlternative } from '@/lib/meal-plan-generator';
 import { doc, updateDoc } from 'firebase/firestore';
-import { APP_OWNER_UID } from '@/lib/constants';
+import { planDailyMealPath } from '@/lib/plans';
 
 type MealItemProps = {
+  planId: string;
   day: number;
   category: MealCategory;
   mealName: string;
   mealItems: MealItems | null;
 };
 
-export default function MealItem({ day, category, mealName, mealItems }: MealItemProps) {
+export default function MealItem({ planId, day, category, mealName, mealItems }: MealItemProps) {
   const { user } = useUser();
   const [isRefreshing, startRefreshTransition] = useTransition();
   const [isChanging, startChangeTransition] = useTransition();
@@ -40,7 +41,7 @@ export default function MealItem({ day, category, mealName, mealItems }: MealIte
       try {
         const suggestedMeal = suggestLocalAlternative(availableMeals, mealName);
 
-        const dayRef = doc(firestore, `users/${APP_OWNER_UID}/daily-meals/day-${day}`);
+        const dayRef = doc(firestore, planDailyMealPath(planId, `day-${day}`));
         await updateDoc(dayRef, { [category]: suggestedMeal });
         
       } catch (error: any) {
@@ -57,7 +58,7 @@ export default function MealItem({ day, category, mealName, mealItems }: MealIte
     if (newMeal === mealName || !user) return;
     startChangeTransition(async () => {
       try {
-        const dayRef = doc(firestore, `users/${APP_OWNER_UID}/daily-meals/day-${day}`);
+        const dayRef = doc(firestore, planDailyMealPath(planId, `day-${day}`));
         await updateDoc(dayRef, { [category]: newMeal });
       } catch (error: any) {
         toast({
