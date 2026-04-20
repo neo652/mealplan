@@ -27,6 +27,7 @@ import {
   slugifyName,
 } from '@/lib/constants';
 import type { MealItems } from '@/lib/types';
+import { trackEvent } from '@/lib/analytics';
 import LoadingSpinner from './loading-spinner';
 
 type Props = {
@@ -218,6 +219,9 @@ function NewPlanDialog({
           firestore,
           name: name.trim(),
           seedFrom: seedFrom === 'none' ? null : seedFrom,
+        });
+        trackEvent('plan_created', {
+          seededFrom: seedFrom === 'none' ? 'none' : seedFrom === 'starter' ? 'starter' : 'plan',
         });
         onOpenChange(false);
         onCreated({ id: summary.id, name: summary.name });
