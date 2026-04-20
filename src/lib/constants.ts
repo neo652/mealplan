@@ -3,7 +3,7 @@ export const MEAL_CATEGORIES = ['breakfast', 'lunch', 'dinner', 'snack'] as cons
 export const LEGACY_APP_OWNER_UID = 'rP07763S2bNDtZcxoAaBnbyEvs92';
 export const STARTER_PLAN_ID = '_starter';
 export const PLANS_INDEX_DOC = 'plans-index/all';
-export const LOCAL_STORAGE_PLAN_KEY = 'mealgenius.currentPlanId';
+export const LOCAL_STORAGE_PLAN_KEY = 'mealplans.currentPlanId';
 
 export function slugifyName(name: string): string {
   return name

@@ -76,7 +76,7 @@ export default function PlanPicker({ onPlanSelected }: Props) {
       <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-12">
         <div className="flex items-center gap-2">
           <UtensilsCrossed className="h-6 w-6 text-primary" />
-          <span className="text-lg font-semibold font-headline">MealGenius</span>
+          <span className="text-lg font-semibold font-headline">MealPlans</span>
         </div>
 
         <div className="mt-16 mb-10 text-center">

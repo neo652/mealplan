@@ -1,5 +1,5 @@
 /**
- * # Firestore Security Rules: MealGenius App
+ * # Firestore Security Rules: MealPlans App
  *
  * Multi-plan, trust-based family app. Anyone signed in (anonymous auth is
  * sufficient) may read/write any /plans/{planId} tree. Plan IDs are

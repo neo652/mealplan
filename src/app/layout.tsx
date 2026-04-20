@@ -4,8 +4,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'MealGenius',
-  description: 'AI-Powered Meal Planning',
+  title: 'MealPlans',
+  description: 'Simple meal planning for the whole household',
 };
 
 export default function RootLayout({

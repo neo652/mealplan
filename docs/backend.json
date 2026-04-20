@@ -4,7 +4,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user within the MealGenius application. User authentication is anonymous using Firebase.",
+      "description": "Represents a user within the MealPlans application. User authentication is anonymous using Firebase.",
       "properties": {
         "id": {
           "type": "string",

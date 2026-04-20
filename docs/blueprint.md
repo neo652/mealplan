@@ -1,4 +1,4 @@
-# **App Name**: MealGenius
+# **App Name**: MealPlans
 
 ## Core Features:
 
