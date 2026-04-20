@@ -18,7 +18,7 @@ import { useUser, useToast, useFirestore } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UtensilsCrossed } from 'lucide-react';
 import LoadingSpinner from './loading-spinner';
-import { MEAL_CATEGORIES } from '@/lib/constants';
+import { MEAL_CATEGORIES, APP_OWNER_UID } from '@/lib/constants';
 import type { MealCategory } from '@/lib/types';
 import Image from 'next/image';
 import {PlaceHolderImages} from '@/lib/placeholder-images';
@@ -69,14 +69,14 @@ export default function InitialSetupForm() {
         const batch = writeBatch(firestore);
         const planStartDate = new Date();
         
-        const userDocRef = doc(firestore, 'users', user.uid);
-        batch.set(userDocRef, { id: user.uid });
+        const userDocRef = doc(firestore, 'users', APP_OWNER_UID);
+        batch.set(userDocRef, { id: APP_OWNER_UID });
 
-        const mealItemsRef = doc(firestore, 'users', user.uid, 'data', 'meal-items');
+        const mealItemsRef = doc(firestore, 'users', APP_OWNER_UID, 'data', 'meal-items');
         batch.set(mealItemsRef, { ...mealItems, planStartDate: formatISO(planStartDate) });
 
         plan.forEach((dailyMeal, index) => {
-          const dayRef = doc(firestore, `users/${user.uid}/daily-meals/day-${index + 1}`);
+          const dayRef = doc(firestore, `users/${APP_OWNER_UID}/daily-meals/day-${index + 1}`);
           const mealDate = addDays(planStartDate, index);
           batch.set(dayRef, { ...dailyMeal, date: formatISO(mealDate) });
         });

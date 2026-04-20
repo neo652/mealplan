@@ -6,6 +6,7 @@ import InitialSetupForm from '@/components/initial-setup-form';
 import Dashboard from '@/components/dashboard';
 import LoadingSpinner from '@/components/loading-spinner';
 import type { MealItems, DailyMeal } from '@/lib/types';
+import { APP_OWNER_UID } from '@/lib/constants';
 
 
 export default function ClientPage() {
@@ -14,14 +15,14 @@ export default function ClientPage() {
 
   const mealItemsRef = useMemoFirebase(() => {
     if (!user) return null;
-    return doc(firestore, 'users', user.uid, 'data', 'meal-items');
+    return doc(firestore, 'users', APP_OWNER_UID, 'data', 'meal-items');
   }, [firestore, user]);
 
   const { data: mealItems, isLoading: isMealItemsLoading } = useDoc<MealItems>(mealItemsRef);
 
   const dailyMealsRef = useMemoFirebase(() => {
     if (!user) return null;
-    return collection(firestore, `users/${user.uid}/daily-meals`);
+    return collection(firestore, `users/${APP_OWNER_UID}/daily-meals`);
   }, [firestore, user]);
 
   const { data: dailyMeals, isLoading: isDailyMealsLoading } = useCollection<DailyMeal>(dailyMealsRef);
