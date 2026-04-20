@@ -10,9 +10,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['PT Sans', 'sans-serif'],
-        headline: ['Playfair Display', 'serif'],
-        code: ['monospace'],
+        body: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        headline: ['Space Grotesk', 'Inter', 'ui-sans-serif', 'sans-serif'],
+        code: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       colors: {
         background: 'hsl(var(--background))',
