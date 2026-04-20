@@ -90,7 +90,7 @@ export default function AppHeader({ plan, mealItems, onSwitchPlan, onSelectPlan 
         <SidebarTrigger className="md:hidden" />
         <div className="flex items-center gap-2">
           <UtensilsCrossed className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-bold font-headline">MealGenius</h1>
+          <h1 className="text-xl font-bold font-headline">MealPlans</h1>
         </div>
       </div>
       <div className="flex items-center gap-2 md:gap-3">
