@@ -9,7 +9,7 @@ import LoadingSpinner from './loading-spinner';
 import { MealItems } from '@/lib/types';
 import { generateLocalMealPlan } from '@/lib/meal-plan-generator';
 import { writeBatch, doc } from 'firebase/firestore';
-import { addDays, formatISO } from 'date-fns';
+import { addDays, formatISO, startOfWeek } from 'date-fns';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,7 +53,7 @@ export default function AppHeader({ plan, mealItems, onSwitchPlan, onSelectPlan 
         });
 
         const batch = writeBatch(firestore);
-        const planStartDate = new Date();
+        const planStartDate = startOfWeek(new Date(), { weekStartsOn: 1 });
 
         const mealItemsRef = doc(firestore, planMealItemsPath(plan.id));
         batch.set(mealItemsRef, { planStartDate: formatISO(planStartDate) }, { merge: true });
