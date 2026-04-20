@@ -1,87 +1,61 @@
 /**
  * # Firestore Security Rules: MealGenius App
  *
- * ## Core Philosophy
- * This ruleset enforces a strict user-ownership model. All data is considered private to the user who created it.
- * Access control is based entirely on the authenticated user's ID (`request.auth.uid`) matching the user ID
- * segment (`{userId}`) in the document path. This model ensures strong data isolation between users.
- * The application relies on Firebase Anonymous Authentication, so all legitimate users will have an `auth` object.
- *
- * ## Data Structure
- * The data is organized hierarchically. A top-level `/users` collection holds individual user documents. All other
- * user-specific data, such as `data` and `daily-meals`, are stored in subcollections under the
- * corresponding `/users/{userId}` document.
- *
- * ## Key Security Decisions
- * - **User Data Isolation**: Users can only read or write data within their own document tree (i.e., `/users/{their-own-id}/...`).
- * - **No User Listing**: Listing the top-level `/users` collection is explicitly disallowed to prevent enumeration of all application users.
- * - **Path-Based Security**: Rules rely on the `{userId}` wildcard in the path for authorization, which is fast and efficient as it avoids extra database reads (`get()` calls).
- * - **Relational Integrity**: On creation, rules validate that the `userId` field within a document's data matches the `{userId}` in the path, ensuring data consistency. On update, this field is made immutable.
- *
+ * Multi-plan, trust-based family app. Anyone signed in (anonymous auth is
+ * sufficient) may read/write any /plans/{planId} tree. Plan IDs are
+ * human-chosen slugs, so this is explicitly a low-trust model suitable
+ * for a family/household.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions for concise and readable rules
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Checks if the requesting user is the owner of the document based on the path.
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    // --- New multi-plan collections ---
+
+    match /plans/{planId} {
+      allow get, create, update: if isSignedIn();
+      allow list: if false;
+      allow delete: if false;
     }
 
-    // For update/delete operations: Checks for ownership AND that the document exists.
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+    match /plans/{planId}/data/{docId} {
+      allow read, write: if isSignedIn();
     }
 
-    /**
-     * @description Manages access to a user's root document. Users can create and manage their own profile document.
-     * @path /users/{userId}
-     * @allow (create) A new anonymous user (auth.uid='new-user-abc') creating their own document at `/users/new-user-abc`.
-     * @deny (read) User 'user-abc' trying to read the document at `/users/user-xyz`.
-     * @deny (list) Any user trying to list all documents in the `/users` collection.
-     * @principle Enforces self-creation and ownership of the root user document and prevents user enumeration.
-     */
-    // MealGenius is a single-owner personal app. APP_OWNER_UID is the fixed owner.
-    // Any signed-in (anonymous) user may read/write the owner's tree.
+    match /plans/{planId}/daily-meals/{dayId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Single aggregate doc listing every plan so the landing picker can
+    // render without enumerating the /plans collection.
+    match /plans-index/{docId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // --- Legacy single-owner tree (kept read-only for rollback) ---
+
     function isAppOwnerPath(userId) {
       return userId == 'rP07763S2bNDtZcxoAaBnbyEvs92';
     }
 
     match /users/{userId} {
-      allow get: if isOwner(userId) || (isSignedIn() && isAppOwnerPath(userId));
+      allow get: if isSignedIn() && isAppOwnerPath(userId);
       allow list: if false;
-      allow create: if (isOwner(userId) || (isSignedIn() && isAppOwnerPath(userId))) && request.resource.data.id == userId;
-      allow update: if isSignedIn() && isAppOwnerPath(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if false;
+      allow create, update, delete: if false;
     }
 
-    /**
-     * @description Secures user-specific configuration data, like the list of all meal items.
-     * @path /users/{userId}/data/{docId}
-     * @allow (read, write) User 'user-abc' managing their data document at `/users/user-abc/data/meal-items`.
-     * @deny (read, write) User 'user-xyz' trying to access `/users/user-abc/data/meal-items`.
-     * @principle Restricts all access to a user's own data tree using path-based ownership.
-     */
     match /users/{userId}/data/{docId} {
-        allow read, write: if isOwner(userId) || (isSignedIn() && isAppOwnerPath(userId));
+      allow read: if isSignedIn() && isAppOwnerPath(userId);
+      allow write: if false;
     }
 
-    /**
-     * @description Secures a user's private collection of daily meal plans. Only the owner can manage their plans.
-     * @path /users/{userId}/daily-meals/{dayId}
-     * @allow (read) User 'user-abc' reading their own meal plan at `/users/user-abc/daily-meals/2024-05-20`.
-     * @allow (delete) User 'user-abc' deleting their own plan at `/users/user-abc/daily-meals/2024-05-20`.
-     * @deny (read) An unauthenticated user trying to read any meal plan.
-     * @deny (create) User 'user-xyz' trying to create a plan under `/users/user-abc/daily-meals`.
-     * @principle Restricts all access to a user's own data tree using path-based ownership.
-     */
     match /users/{userId}/daily-meals/{dayId} {
-        allow read, write: if isOwner(userId) || (isSignedIn() && isAppOwnerPath(userId));
+      allow read: if isSignedIn() && isAppOwnerPath(userId);
+      allow write: if false;
     }
   }
 }

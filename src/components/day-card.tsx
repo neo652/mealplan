@@ -6,17 +6,18 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 type DayCardProps = {
+  planId: string;
   day: number;
   meal: DailyMeal;
   isCurrentDay: boolean;
   mealItems: MealItems | null;
 };
 
-export default function DayCard({ day, meal, isCurrentDay, mealItems }: DayCardProps) {
+export default function DayCard({ planId, day, meal, isCurrentDay, mealItems }: DayCardProps) {
   const dayDate = new Date(meal.date);
 
   return (
-    <Card className={cn('flex flex-col', isCurrentDay && 'border-primary ring-2 ring-primary')}>
+    <Card className={cn('flex flex-col transition-shadow hover:shadow-md', isCurrentDay && 'border-primary ring-2 ring-primary shadow-lg')}>
       <CardHeader>
         <CardTitle className="font-headline text-lg flex justify-between items-center">
           <span>Day {day}</span>
@@ -27,9 +28,10 @@ export default function DayCard({ day, meal, isCurrentDay, mealItems }: DayCardP
         {MEAL_CATEGORIES.map((category) => (
           <MealItem
             key={category}
+            planId={planId}
             day={day}
             category={category as MealCategory}
-            mealName={meal[category as  keyof Omit<DailyMeal, 'date'>]}
+            mealName={meal[category as keyof Omit<DailyMeal, 'date'>]}
             mealItems={mealItems}
           />
         ))}

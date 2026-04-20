@@ -13,22 +13,30 @@ import LoadingSpinner from './loading-spinner';
 import { DailyMeal, MealItems } from '@/lib/types';
 
 interface DashboardProps {
+  plan: { id: string; name: string };
   mealItems: MealItems;
   dailyMeals: DailyMeal[] | null;
+  onSwitchPlan: () => void;
+  onSelectPlan: (plan: { id: string; name: string }) => void;
 }
 
-export default function Dashboard({ mealItems, dailyMeals }: DashboardProps) {
+export default function Dashboard({ plan, mealItems, dailyMeals, onSwitchPlan, onSelectPlan }: DashboardProps) {
 
   return (
     <SidebarProvider>
       <Sidebar>
-        <SidebarContentComponent mealItems={mealItems} />
+        <SidebarContentComponent plan={plan} mealItems={mealItems} />
       </Sidebar>
       <SidebarInset>
         <div className="flex h-full flex-col">
-          <AppHeader mealItems={mealItems} />
+          <AppHeader
+            plan={plan}
+            mealItems={mealItems}
+            onSwitchPlan={onSwitchPlan}
+            onSelectPlan={onSelectPlan}
+          />
           <main className="flex-1 overflow-y-auto p-4 md:p-6">
-            {dailyMeals ? <MealPlanDisplay meals={dailyMeals} mealItems={mealItems} /> : <div className="flex h-full items-center justify-center"><LoadingSpinner /></div>}
+            {dailyMeals ? <MealPlanDisplay planId={plan.id} meals={dailyMeals} mealItems={mealItems} /> : <div className="flex h-full items-center justify-center"><LoadingSpinner /></div>}
           </main>
         </div>
       </SidebarInset>
