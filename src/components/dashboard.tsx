@@ -17,7 +17,7 @@ import { useTransition } from 'react';
 import { useFirestore, useToast, useUser } from '@/firebase';
 import { generateLocalMealPlan } from '@/lib/meal-plan-generator';
 import { writeBatch, doc } from 'firebase/firestore';
-import { addDays, formatISO } from 'date-fns';
+import { addDays, formatISO, startOfWeek } from 'date-fns';
 import { planDailyMealPath, planMealItemsPath, touchPlan } from '@/lib/plans';
 
 interface DashboardProps {
@@ -96,7 +96,7 @@ function EmptyPlanState({
           snack: mealItems.snack,
         });
         const batch = writeBatch(firestore);
-        const planStartDate = new Date();
+        const planStartDate = startOfWeek(new Date(), { weekStartsOn: 1 });
         batch.set(doc(firestore, planMealItemsPath(plan.id)), { planStartDate: formatISO(planStartDate) }, { merge: true });
         generated.forEach((dailyMeal, index) => {
           const dayRef = doc(firestore, planDailyMealPath(plan.id, `day-${index + 1}`));

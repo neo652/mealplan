@@ -22,7 +22,7 @@ import { MEAL_CATEGORIES, avatarGradient, initialsOf } from '@/lib/constants';
 import type { MealCategory } from '@/lib/types';
 import { generateLocalMealPlan } from '@/lib/meal-plan-generator';
 import { writeBatch, doc } from 'firebase/firestore';
-import { addDays, formatISO } from 'date-fns';
+import { addDays, formatISO, startOfWeek } from 'date-fns';
 import { planDailyMealPath, planMealItemsPath, touchPlan } from '@/lib/plans';
 
 const formSchema = z.object({
@@ -69,7 +69,7 @@ export default function InitialSetupForm({ plan }: Props) {
         const generated = generateLocalMealPlan(mealItems);
 
         const batch = writeBatch(firestore);
-        const planStartDate = new Date();
+        const planStartDate = startOfWeek(new Date(), { weekStartsOn: 1 });
 
         batch.set(
           doc(firestore, planMealItemsPath(plan.id)),
